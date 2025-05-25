@@ -160,3 +160,6 @@ function draw() {
 
     // 3) 외곽선은 아예 그리지 않습니다.
 }
+function homePage() {
+    window.location.href = "index.html";
+}
