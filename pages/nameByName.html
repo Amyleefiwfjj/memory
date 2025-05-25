@@ -31,19 +31,28 @@
             border-radius: 4px;
         }
 
-        #save-btn {
-            margin-top: 8px;
+        .controls {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .controls button {
             padding: 8px 16px;
             font-size: 16px;
             border: none;
             border-radius: 4px;
-            background: #4CAF50;
-            color: white;
             cursor: pointer;
         }
 
-        #save-btn:active {
-            transform: scale(0.95);
+        #toggle-btn {
+            background: #2196F3;
+            color: white;
+        }
+
+        #save-btn {
+            background: #4CAF50;
+            color: white;
         }
 
         #sketch-holder {
@@ -54,13 +63,21 @@
 
 <body>
 
+    <!-- 입력창 -->
     <div class="translator">
         <input type="text" id="outlineInput" placeholder="Outline 텍스트" value="HELLO WORLD">
-        <input type="text" id="fillInput" placeholder="Fill 텍스트 (비워두면 Outline과 동일)">
+        <input type="text" id="fillInput" placeholder="Fill 텍스트 (비워두면 동일)">
     </div>
 
+    <!-- 토글 & 저장 버튼 -->
+    <div class="controls">
+        <button id="toggle-btn">그리드 채우기 모드</button>
+        <button id="save-btn">저장하기</button>
+        <button id="complete-btn">완성하기</button>
+    </div>
+
+    <!-- 캔버스 -->
     <div id="sketch-holder"></div>
-    <button id="save-btn">저장하기</button>
 
     <script src="nameByName.js"></script>
 </body>
