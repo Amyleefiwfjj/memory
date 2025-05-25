@@ -1,7 +1,6 @@
-let pg;
-let synced = true;
-
+let pgMask;
 let outlineInput, fillInput;
+let synced = true;
 
 function setup() {
     const canvas = createCanvas(800, 600);
@@ -10,25 +9,38 @@ function setup() {
 
     outlineInput = document.getElementById('outlineInput');
     fillInput = document.getElementById('fillInput');
-
-    // 동기화 설정
     outlineInput.addEventListener('input', syncFill);
     fillInput.addEventListener('input', () => synced = false);
-
-    pg = createGraphics(width, height);
-
-    // 초기 동기화
     syncFill();
 
-    // 저장 버튼 이벤트
+    pgMask = createGraphics(width, height);
+
     document.getElementById('save-btn')
-        .addEventListener('click', () => saveCanvas('my_artwork', 'png'));
+        .addEventListener('click', () => saveCanvas('filled_text', 'png'));
 }
 
+// outline → fill 동기화
 function syncFill() {
     if (synced && fillInput.value === '') {
         fillInput.value = outlineInput.value;
     }
+}
+
+// 폭(maxW)에 맞춰 자동 줄바꿈
+function wrapText(gfx, txt, maxW) {
+    const words = txt.split(' ');
+    let line = '', result = [];
+    for (let w of words) {
+        const test = line ? line + ' ' + w : w;
+        if (gfx.textWidth(test) <= maxW) {
+            line = test;
+        } else {
+            if (line) result.push(line);
+            line = w;
+        }
+    }
+    if (line) result.push(line);
+    return result.join('\n');
 }
 
 function draw() {
@@ -37,26 +49,47 @@ function draw() {
     const outlineText = outlineInput.value;
     const fillText = fillInput.value || outlineText;
 
-    pg.clear();
-    pg.fill(0);
-    pg.textSize(300);
-    pg.textAlign(CENTER, CENTER);
-    pg.text(outlineText, width / 2, height / 2);
-    pg.loadPixels();
+    // 1) mask용 off-screen 그래픽에 outline 다중행 텍스트 그리기
+    const fs = 200;              // 폰트 크기
+    const leading = fs * 1.1;    // 행간
+    pgMask.clear();
+    pgMask.background(0);
+    pgMask.fill(255);
+    pgMask.noStroke();
+    pgMask.textSize(fs);
+    pgMask.textAlign(CENTER, CENTER);
+    pgMask.textLeading(leading);
 
-    const gridStep = 20;
+    // 캔버스 폭의 90%를 maxW로 잡고 자동 줄바꿈
+    const wrapped = wrapText(pgMask, outlineText, width * 0.9);
+    pgMask.text(wrapped, width / 2, height / 2);
+    pgMask.loadPixels();
+
+    // 2) mask 안에만 fill 글자 배치 (grid)
+    const grid = 25;
     textSize(20);
     textAlign(LEFT, TOP);
-    let idx = 0;
+    noStroke();
+    fill(0);
 
-    for (let y = 0; y < height; y += gridStep) {
-        for (let x = 0; x < width; x += gridStep) {
-            const c = pg.get(x, y)[0];
-            if (c < 128) {
+    let idx = 0;
+    for (let y = 0; y < height; y += grid) {
+        for (let x = 0; x < width; x += grid) {
+            // mask 픽셀(0~255), 255(글자 영역)일 때만
+            if (pgMask.get(x, y)[0] > 128) {
                 const ch = fillText.charAt(idx % fillText.length);
                 text(ch, x, y);
                 idx++;
             }
         }
     }
+
+    // 3) 윤곽선으로 outline 다시 그리기
+    noFill();
+    stroke(0);
+    strokeWeight(2);
+    textSize(fs);
+    textAlign(CENTER, CENTER);
+    textLeading(leading);
+    text(wrapped, width / 2, height / 2);
 }
