@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="utf-8" />
+    <title>한글 획수 궁합</title>
+    <script src="https://cdn.jsdelivr.net/npm/p5@1.9.2/lib/p5.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: system-ui;
+        }
+
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 2;
+        }
+
+        input,
+        button {
+            padding: 4px 8px;
+            margin-right: 4px;
+            font-size: 16px;
+        }
+
+        #score {
+            font-weight: bold;
+            font-size: 18px;
+            margin-left: 8px;
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="ui">
+        <input id="nameA" placeholder="이름 1" value="홍길동">
+        <input id="nameB" placeholder="이름 2" value="김미미">
+        <button id="runBtn">궁합보기</button>
+        <span id="score"></span>
+    </div>
+    <script src="destined.js">    </script>
+</body>
+
+</html>
