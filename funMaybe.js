@@ -151,11 +151,11 @@ function drawScore() {
 }
 
 function drawEatenWords() {
-    const listX = 1130;
+    const listX = windowWidth-150;
     const listY = 30;
     fill(0, 0, 0, 180);
     noStroke();
-    rect(listX - 10, listY - 20, 130, 260, 10);
+    rect(listX, listY - 20, 130, 260, 10);
     fill(255);
     textSize(14);
     textAlign(LEFT);

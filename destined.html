@@ -7,7 +7,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600&display=swap" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/p5@1.9.2/lib/p5.min.js"></script>
     <style>
-        /* 기본 설정 */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -43,14 +42,6 @@
             align-items: center;
             justify-content: center;
         }
-
-        #ui button:last-child {
-            grid-column: span 4;
-            /* 전체 너비 사용 */
-            justify-self: end;
-            /* 오른쪽 정렬 */
-        }
-
 
         #ui input {
             flex: 1 1 150px;
@@ -108,19 +99,15 @@
 </head>
 
 <body>
-    <!-- 입력 UI -->
     <div id="ui">
-        <input id="nameA" placeholder="이름 1" value="홍길동" />
+        <input id="nameA" placeholder="이름 1" value="이다은" />
         <span id="score">&nbsp;</span>
-        <input id="nameB" placeholder="이름 2" value="김미미" />
+        <input id="nameB" placeholder="이름 2" value="김아텍" />
         <button id="runBtn">시각화</button>
         <button type="button" onclick="homePage()">시작화면으로 돌아가기</button>
-
     </div>
 
-
     <script>
-        // 획수 맵 & 분해 맵
         const strokeMap = { 'ㄱ': 2, 'ㄴ': 2, 'ㄷ': 3, 'ㄹ': 5, 'ㅁ': 4, 'ㅂ': 4, 'ㅅ': 2, 'ㅇ': 1, 'ㅈ': 3, 'ㅊ': 4, 'ㅋ': 3, 'ㅌ': 4, 'ㅍ': 4, 'ㅎ': 3, 'ㅏ': 2, 'ㅐ': 3, 'ㅑ': 3, 'ㅒ': 4, 'ㅓ': 2, 'ㅔ': 3, 'ㅕ': 3, 'ㅖ': 4, 'ㅗ': 2, 'ㅛ': 3, 'ㅜ': 2, 'ㅠ': 3, 'ㅡ': 1, 'ㅣ': 1 };
         const splitCon = { 'ㄲ': ['ㄱ', 'ㄱ'], 'ㄳ': ['ㄱ', 'ㅅ'], 'ㄵ': ['ㄴ', 'ㅈ'], 'ㄶ': ['ㄴ', 'ㅎ'], 'ㄺ': ['ㄹ', 'ㄱ'], 'ㄻ': ['ㄹ', 'ㅁ'], 'ㄼ': ['ㄹ', 'ㅂ'], 'ㄽ': ['ㄹ', 'ㅅ'], 'ㄾ': ['ㄹ', 'ㅌ'], 'ㄿ': ['ㄹ', 'ㅍ'], 'ㅀ': ['ㄹ', 'ㅎ'], 'ㅄ': ['ㅂ', 'ㅅ'], 'ㄸ': ['ㄷ', 'ㄷ'], 'ㅃ': ['ㅂ', 'ㅂ'], 'ㅆ': ['ㅅ', 'ㅅ'], 'ㅉ': ['ㅈ', 'ㅈ'] };
         const splitVow = { 'ㅘ': ['ㅗ', 'ㅏ'], 'ㅙ': ['ㅗ', 'ㅐ'], 'ㅚ': ['ㅗ', 'ㅣ'], 'ㅝ': ['ㅜ', 'ㅓ'], 'ㅞ': ['ㅜ', 'ㅔ'], 'ㅟ': ['ㅜ', 'ㅣ'], 'ㅢ': ['ㅡ', 'ㅣ'] };
@@ -128,27 +115,133 @@
         const JUNG = ['ㅏ', 'ㅐ', 'ㅑ', 'ㅒ', 'ㅓ', 'ㅔ', 'ㅕ', 'ㅖ', 'ㅗ', 'ㅘ', 'ㅙ', 'ㅚ', 'ㅛ', 'ㅜ', 'ㅠ', 'ㅝ', 'ㅞ', 'ㅟ', 'ㅠ', 'ㅡ', 'ㅢ', 'ㅣ'];
         const JONG = ['', 'ㄱ', 'ㄲ', 'ㄳ', 'ㄴ', 'ㄵ', 'ㄶ', 'ㄷ', 'ㄹ', 'ㄺ', 'ㄻ', 'ㄼ', 'ㄽ', 'ㄾ', 'ㄿ', 'ㅀ', 'ㅁ', 'ㅂ', 'ㅄ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
 
-        function decomposeHangul(str) { return Array.from(str).map(ch => { const code = ch.charCodeAt(0) - 0xAC00; if (code < 0 || code > 11171) return [ch]; const jong = code % 28, jung = Math.floor((code / 28) % 21), cho = Math.floor(code / (28 * 21)); const parts = [CHO[cho], JUNG[jung]]; if (JONG[jong]) parts.push(JONG[jong]); return parts; }); }
-        function countStrokes(str) { return decomposeHangul(str).map(parts => parts.flatMap(j => splitCon[j] || splitVow[j] || [j]).reduce((s, jamo) => s + (strokeMap[jamo] || 0), 0)); }
-        function interleave(a, b) { const out = [], n = Math.max(a.length, b.length); for (let i = 0; i < n; i++) { if (i < a.length) out.push(a[i]); if (i < b.length) out.push(b[i]); } return out; }
-        function combine(scores) { const nxt = []; for (let i = 0; i < scores.length - 1; i++) { nxt.push((scores[i] + scores[i + 1]) % 10); } return nxt; }
-        function calcSteps(n1, n2) { const chars = interleave(n1, n2); let cur = countStrokes(chars.join('')), steps = [cur]; while (cur.length > 2) { cur = combine(cur); steps.push(cur); } return { chars, steps }; }
-
-        let vizChars = [], vizSteps = [];
-        function setup() { createCanvas(windowWidth, windowHeight); noLoop(); textAlign(CENTER, CENTER); textSize(24); }
-        function draw() {
-            clear(); if (!vizSteps.length) return; const Mx = 150, ColW = 120, Vs = 80;
-            vizSteps.forEach((arr, i) => { const x = Mx + i * ColW, H = (arr.length - 1) * Vs; noStroke(); fill(33); arr.forEach((v, j) => { text(v, x, height / 2 - H / 2 + j * Vs); }); if (i < vizSteps.length - 1) { stroke(120); const nxt = vizSteps[i + 1], H2 = (nxt.length - 1) * Vs; nxt.forEach((_, k) => { const x2 = Mx + (i + 1) * ColW; const y2 = height / 2 - H2 / 2 + k * Vs; const y1a = height / 2 - H / 2 + k * Vs; const y1b = y1a + Vs; line(x, y1a, x2, y2); line(x, y1b, x2, y2); }); } });
-            const charX = Mx - ColW + 20, totalC = (vizChars.length - 1) * Vs; noStroke(); fill(33); vizChars.forEach((ch, i) => text(ch, charX, height / 2 - totalC / 2 + i * Vs));
+        function decomposeHangul(str) {
+            return Array.from(str).map(ch => {
+                const code = ch.charCodeAt(0) - 0xAC00;
+                if (code < 0 || code > 11171) return [ch];
+                const jong = code % 28;
+                const jung = Math.floor((code / 28) % 21);
+                const cho = Math.floor(code / (28 * 21));
+                const parts = [CHO[cho], JUNG[jung]];
+                if (JONG[jong]) parts.push(JONG[jong]);
+                return parts;
+            });
         }
-        window.addEventListener('resize', () => { resizeCanvas(windowWidth, windowHeight); redraw(); });
+
+        function countStrokes(str) {
+            return decomposeHangul(str).map(parts =>
+                parts.flatMap(j => splitCon[j] || splitVow[j] || [j])
+                    .reduce((s, jamo) => s + (strokeMap[jamo] || 0), 0)
+            );
+        }
+
+        function interleave(a, b) {
+            const out = [], n = Math.max(a.length, b.length);
+            for (let i = 0; i < n; i++) {
+                if (i < a.length) out.push(a[i]);
+                if (i < b.length) out.push(b[i]);
+            }
+            return out;
+        }
+
+        function combine(scores) {
+            const next = [];
+            for (let i = 0; i < scores.length - 1; i++) {
+                next.push((scores[i] + scores[i + 1]) % 10);
+            }
+            return next;
+        }
+
+        function calcSteps(n1, n2) {
+            const chars = interleave(n1, n2);
+            let cur = countStrokes(chars.join(''));
+            const steps = [cur];
+            while (cur.length > 2) {
+                cur = combine(cur);
+                steps.push(cur);
+            }
+            return { chars, steps };
+        }
+
+        let vizChars = [], vizSteps = [], currentLoveText = '';
+
         document.getElementById('runBtn').addEventListener('click', () => {
-            const A = document.getElementById('nameA').value.trim(), B = document.getElementById('nameB').value.trim(); if (!A || !B) return;
+            const A = document.getElementById('nameA').value.trim();
+            const B = document.getElementById('nameB').value.trim();
+            if (!A || !B) return;
             const { chars, steps } = calcSteps(A, B);
-            vizChars = chars; vizSteps = steps;
-            document.getElementById('score').textContent = `${A} loves ${B} ${steps[steps.length - 1].join('')}%`;
+            vizChars = chars;
+            vizSteps = steps;
+            const percent = steps[steps.length - 1].join('');
+            currentLoveText = `  ${A} loves ${B} ${percent}%`;
+            document.getElementById('score').textContent = ''; // span 비움
             redraw();
-        }); function homePage() {
+        });
+
+        function setup() {
+            createCanvas(windowWidth, windowHeight);
+            noLoop();
+            textAlign(CENTER, CENTER);
+            textSize(24);
+        }
+
+        function draw() {
+            clear();
+            if (!vizSteps.length) return;
+
+            const ColW = 120, Vs = 80;
+            const totalCols = vizSteps.length;
+            const totalWidth = (totalCols - 1) * ColW;
+            const startX = width / 2 - totalWidth / 2;
+            const centerY = height / 2;
+
+            // 문구: 도표 하단 중앙에 위치
+            // 문구: 도표 하단 중앙에 위치
+            textAlign(CENTER, CENTER);
+            textSize(24);                    // 글씨 크기 키움
+            textStyle(BOLD);                // 굵게
+            fill(100, 80, 160);             // 진한 보라 계열 강조
+            text("=> " + currentLoveText, width / 2, centerY + (vizChars.length * Vs) / 2 + 50);
+            text("=> " + currentLoveText, width / 2, centerY + (vizChars.length * Vs) / 2 + 50);
+
+            // 숫자 삼각형
+            textSize(24);
+            vizSteps.forEach((arr, i) => {
+                const x = startX + i * ColW;
+                const H = (arr.length - 1) * Vs;
+                noStroke(); fill(33);
+                arr.forEach((v, j) => {
+                    text(v, x, centerY - H / 2 + j * Vs);
+                });
+
+                if (i < vizSteps.length - 1) {
+                    stroke(120);
+                    const nxt = vizSteps[i + 1];
+                    const H2 = (nxt.length - 1) * Vs;
+                    nxt.forEach((_, k) => {
+                        const x2 = startX + (i + 1) * ColW;
+                        const y2 = centerY - H2 / 2 + k * Vs;
+                        const y1a = centerY - H / 2 + k * Vs;
+                        const y1b = y1a + Vs;
+                        line(x, y1a, x2, y2);
+                        line(x, y1b, x2, y2);
+                    });
+                }
+            });
+
+            // 문자 열: 왼쪽 열
+            const charX = startX - 80;
+            const totalC = (vizChars.length - 1) * Vs;
+            noStroke(); fill(33);
+            vizChars.forEach((ch, i) =>
+                text(ch, charX, centerY - totalC / 2 + i * Vs));
+        }
+        window.addEventListener('resize', () => {
+            resizeCanvas(windowWidth, windowHeight);
+            redraw();
+        });
+
+        function homePage() {
             window.location.href = "index.html";
         }
     </script>
