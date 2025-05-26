@@ -3,192 +3,135 @@
 
 <head>
     <meta charset="utf-8" />
-    <title>한글 획수 궁합 – 세로 이름 + 연결선</title>
+    <title>한글 획수 궁합 – 프리미엄 UI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600&display=swap" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/p5@1.9.2/lib/p5.min.js"></script>
     <style>
-        body {
+        /* 기본 설정 */
+        * {
+            box-sizing: border-box;
             margin: 0;
-            overflow: hidden;
-            font-family: system-ui
+            padding: 0;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            background: #f3f4f6;
+            font-family: 'Noto Sans KR', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         #ui {
-            position: absolute;
+            position: fixed;
             top: 20px;
-            left: 20px;
-            z-index: 10
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+            padding: 16px 24px;
+            display: grid;
+            grid-template-columns: 1fr auto 1fr auto;
+            align-items: center;
+            gap: 16px;
+            width: calc(100% - 40px);
+            max-width: 700px;
+            z-index: 10;
         }
 
-        input,
-        button {
-            padding: 4px 8px;
-            margin-right: 4px;
-            font-size: 16px
+        #ui input {
+            width: 100%;
+            padding: 12px 16px;
+            font-size: 16px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
 
-        #score {
-            font-weight: bold;
+        #ui input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
+        }
+
+        #ui button {
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #ffffff;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: filter 0.2s, transform 0.1s;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        #ui button:hover {
+            filter: brightness(1.1);
+        }
+
+        #ui button:active {
+            transform: scale(0.97);
+        }
+
+        #ui span {
             font-size: 18px;
-            margin-left: 12px
+            font-weight: 600;
+            color: #4c51bf;
+            text-align: center;
         }
 
         canvas {
+            display: block;
             position: absolute;
             top: 0;
             left: 0;
-            z-index: 1
         }
     </style>
 </head>
 
 <body>
+    <!-- 입력 UI -->
     <div id="ui">
-        <input id="nameA" placeholder="이름1" value="홍길동">
-        <input id="nameB" placeholder="이름2" value="김미미">
+        <input id="nameA" placeholder="이름 1" value="홍길동" />
+        <span id="score">&nbsp;</span>
+        <input id="nameB" placeholder="이름 2" value="김미미" />
         <button id="runBtn">시각화</button>
-        <span id="score"></span>
     </div>
 
     <script>
-        // ── 1. 획수 테이블 & 분해 맵 ──
-        const strokeMap = {
-            'ㄱ': 2, 'ㄴ': 2, 'ㄷ': 3, 'ㄹ': 5, 'ㅁ': 4, 'ㅂ': 4, 'ㅅ': 2, 'ㅇ': 1, 'ㅈ': 3, 'ㅊ': 4, 'ㅋ': 3, 'ㅌ': 4, 'ㅍ': 4, 'ㅎ': 3,
-            'ㅏ': 2, 'ㅐ': 3, 'ㅑ': 3, 'ㅒ': 4, 'ㅓ': 2, 'ㅔ': 3, 'ㅕ': 3, 'ㅖ': 4, 'ㅗ': 2, 'ㅛ': 3, 'ㅜ': 2, 'ㅠ': 3, 'ㅡ': 1, 'ㅣ': 1
-        };
-        const splitCon = {
-            'ㄲ': ['ㄱ', 'ㄱ'], 'ㄳ': ['ㄱ', 'ㅅ'], 'ㄵ': ['ㄴ', 'ㅈ'], 'ㄶ': ['ㄴ', 'ㅎ'],
-            'ㄺ': ['ㄹ', 'ㄱ'], 'ㄻ': ['ㄹ', 'ㅁ'], 'ㄼ': ['ㄹ', 'ㅂ'], 'ㄽ': ['ㄹ', 'ㅅ'],
-            'ㄾ': ['ㄹ', 'ㅌ'], 'ㄿ': ['ㄹ', 'ㅍ'], 'ㅀ': ['ㄹ', 'ㅎ'], 'ㅄ': ['ㅂ', 'ㅅ'],
-            'ㄸ': ['ㄷ', 'ㄷ'], 'ㅃ': ['ㅂ', 'ㅂ'], 'ㅆ': ['ㅅ', 'ㅅ'], 'ㅉ': ['ㅈ', 'ㅈ']
-        };
-        const splitVow = {
-            'ㅘ': ['ㅗ', 'ㅏ'], 'ㅙ': ['ㅗ', 'ㅐ'], 'ㅚ': ['ㅗ', 'ㅣ'],
-            'ㅝ': ['ㅜ', 'ㅓ'], 'ㅞ': ['ㅜ', 'ㅔ'], 'ㅟ': ['ㅜ', 'ㅣ'], 'ㅢ': ['ㅡ', 'ㅣ']
-        };
+        // 획수 맵 & 분해 맵
+        const strokeMap = { 'ㄱ': 2, 'ㄴ': 2, 'ㄷ': 3, 'ㄹ': 5, 'ㅁ': 4, 'ㅂ': 4, 'ㅅ': 2, 'ㅇ': 1, 'ㅈ': 3, 'ㅊ': 4, 'ㅋ': 3, 'ㅌ': 4, 'ㅍ': 4, 'ㅎ': 3, 'ㅏ': 2, 'ㅐ': 3, 'ㅑ': 3, 'ㅒ': 4, 'ㅓ': 2, 'ㅔ': 3, 'ㅕ': 3, 'ㅖ': 4, 'ㅗ': 2, 'ㅛ': 3, 'ㅜ': 2, 'ㅠ': 3, 'ㅡ': 1, 'ㅣ': 1 };
+        const splitCon = { 'ㄲ': ['ㄱ', 'ㄱ'], 'ㄳ': ['ㄱ', 'ㅅ'], 'ㄵ': ['ㄴ', 'ㅈ'], 'ㄶ': ['ㄴ', 'ㅎ'], 'ㄺ': ['ㄹ', 'ㄱ'], 'ㄻ': ['ㄹ', 'ㅁ'], 'ㄼ': ['ㄹ', 'ㅂ'], 'ㄽ': ['ㄹ', 'ㅅ'], 'ㄾ': ['ㄹ', 'ㅌ'], 'ㄿ': ['ㄹ', 'ㅍ'], 'ㅀ': ['ㄹ', 'ㅎ'], 'ㅄ': ['ㅂ', 'ㅅ'], 'ㄸ': ['ㄷ', 'ㄷ'], 'ㅃ': ['ㅂ', 'ㅂ'], 'ㅆ': ['ㅅ', 'ㅅ'], 'ㅉ': ['ㅈ', 'ㅈ'] };
+        const splitVow = { 'ㅘ': ['ㅗ', 'ㅏ'], 'ㅙ': ['ㅗ', 'ㅐ'], 'ㅚ': ['ㅗ', 'ㅣ'], 'ㅝ': ['ㅜ', 'ㅓ'], 'ㅞ': ['ㅜ', 'ㅔ'], 'ㅟ': ['ㅜ', 'ㅣ'], 'ㅢ': ['ㅡ', 'ㅣ'] };
         const CHO = ['ㄱ', 'ㄲ', 'ㄴ', 'ㄷ', 'ㄸ', 'ㄹ', 'ㅁ', 'ㅂ', 'ㅃ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅉ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
         const JUNG = ['ㅏ', 'ㅐ', 'ㅑ', 'ㅒ', 'ㅓ', 'ㅔ', 'ㅕ', 'ㅖ', 'ㅗ', 'ㅘ', 'ㅙ', 'ㅚ', 'ㅛ', 'ㅜ', 'ㅠ', 'ㅝ', 'ㅞ', 'ㅟ', 'ㅠ', 'ㅡ', 'ㅢ', 'ㅣ'];
         const JONG = ['', 'ㄱ', 'ㄲ', 'ㄳ', 'ㄴ', 'ㄵ', 'ㄶ', 'ㄷ', 'ㄹ', 'ㄺ', 'ㄻ', 'ㄼ', 'ㄽ', 'ㄾ', 'ㄿ', 'ㅀ', 'ㅁ', 'ㅂ', 'ㅄ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
 
-        // ── 2. 한글 음절 분해
-        function decomposeHangul(str) {
-            return Array.from(str).map(ch => {
-                const code = ch.charCodeAt(0) - 0xAC00;
-                if (code < 0 || code > 11171) return [ch];
-                const jong = code % 28,
-                    jung = Math.floor((code / 28) % 21),
-                    cho = Math.floor(code / (28 * 21));
-                const parts = [CHO[cho], JUNG[jung]];
-                if (JONG[jong]) parts.push(JONG[jong]);
-                return parts;
-            });
-        }
+        function decomposeHangul(str) { return Array.from(str).map(ch => { const code = ch.charCodeAt(0) - 0xAC00; if (code < 0 || code > 11171) return [ch]; const jong = code % 28, jung = Math.floor((code / 28) % 21), cho = Math.floor(code / (28 * 21)); const parts = [CHO[cho], JUNG[jung]]; if (JONG[jong]) parts.push(JONG[jong]); return parts; }); }
+        function countStrokes(str) { return decomposeHangul(str).map(parts => parts.flatMap(j => splitCon[j] || splitVow[j] || [j]).reduce((s, jamo) => s + (strokeMap[jamo] || 0), 0)); }
+        function interleave(a, b) { const out = [], n = Math.max(a.length, b.length); for (let i = 0; i < n; i++) { if (i < a.length) out.push(a[i]); if (i < b.length) out.push(b[i]); } return out; }
+        function combine(scores) { const nxt = []; for (let i = 0; i < scores.length - 1; i++) { nxt.push((scores[i] + scores[i + 1]) % 10); } return nxt; }
+        function calcSteps(n1, n2) { const chars = interleave(n1, n2); let cur = countStrokes(chars.join('')), steps = [cur]; while (cur.length > 2) { cur = combine(cur); steps.push(cur); } return { chars, steps }; }
 
-        // ── 3. 획수 합산
-        function countStrokes(str) {
-            return decomposeHangul(str).map(parts =>
-                parts
-                    .flatMap(j => splitCon[j] || splitVow[j] || [j])
-                    .reduce((s, jamo) => s + (strokeMap[jamo] || 0), 0)
-            );
-        }
-
-        // ── 4. 이름 글자 교차 삽입
-        function interleave(a, b) {
-            const out = [], n = Math.max(a.length, b.length);
-            for (let i = 0; i < n; i++) {
-                if (i < a.length) out.push(a[i]);
-                if (i < b.length) out.push(b[i]);
-            }
-            return out;
-        }
-
-        // ── 5. 슬라이딩 합산(mod10)
-        function combine(scores) {
-            const next = [];
-            for (let i = 0; i < scores.length - 1; i++) {
-                next.push((scores[i] + scores[i + 1]) % 10);
-            }
-            return next;
-        }
-
-        // ── 6. 전체 단계 계산
-        function calcSteps(name1, name2) {
-            const chars = interleave(name1, name2);
-            const steps = []; let curr = countStrokes(chars.join(''));
-            steps.push(curr);
-            while (curr.length > 1) {
-                curr = combine(curr);
-                steps.push(curr);
-            }
-            return { chars, steps };
-        }
-
-        // ── 7. p5.js 시각화 세팅
         let vizChars = [], vizSteps = [];
-        function setup() {
-            createCanvas(windowWidth, windowHeight);
-            noLoop();
-            textAlign(CENTER, CENTER);
-            textSize(24);
-        }
+        function setup() { createCanvas(windowWidth, windowHeight); noLoop(); textAlign(CENTER, CENTER); textSize(24); }
         function draw() {
-            clear();
-            if (!vizSteps.length) return;
-
-            const Mx = 120, ColW = 120, Vs = 80;
-            // 1) 왼쪽에 세로로 이름 글자
-            const charX = Mx - ColW + 20;
-            const totalCharH = (vizChars.length - 1) * Vs;
-            fill(0); noStroke();
-            vizChars.forEach((ch, i) => {
-                const y = height / 2 - totalCharH / 2 + i * Vs;
-                text(ch, charX, y);
-            });
-
-            // 2) 오른쪽에 숫자 + 연결선
-            for (let c = 0; c < vizSteps.length; c++) {
-                const arr = vizSteps[c];
-                const x = Mx + c * ColW;
-                const totalH = (arr.length - 1) * Vs;
-
-                // 숫자
-                fill(0); noStroke();
-                arr.forEach((v, j) => {
-                    const y = height / 2 - totalH / 2 + j * Vs;
-                    text(v, x, y);
-                });
-
-                // 연결선
-                if (c < vizSteps.length - 1) {
-                    stroke(0);
-                    const nxt = vizSteps[c + 1];
-                    const nextH = (nxt.length - 1) * Vs;
-                    nxt.forEach((_, k) => {
-                        const x2 = Mx + (c + 1) * ColW;
-                        const y2 = height / 2 - nextH / 2 + k * Vs;
-                        const y1a = height / 2 - totalH / 2 + k * Vs;
-                        const y1b = height / 2 - totalH / 2 + (k + 1) * Vs;
-                        line(x, y1a, x2, y2);
-                        line(x, y1b, x2, y2);
-                    });
-                }
-            }
+            clear(); if (!vizSteps.length) return; const Mx = 150, ColW = 120, Vs = 80;
+            vizSteps.forEach((arr, i) => { const x = Mx + i * ColW, H = (arr.length - 1) * Vs; noStroke(); fill(33); arr.forEach((v, j) => { text(v, x, height / 2 - H / 2 + j * Vs); }); if (i < vizSteps.length - 1) { stroke(120); const nxt = vizSteps[i + 1], H2 = (nxt.length - 1) * Vs; nxt.forEach((_, k) => { const x2 = Mx + (i + 1) * ColW; const y2 = height / 2 - H2 / 2 + k * Vs; const y1a = height / 2 - H / 2 + k * Vs; const y1b = y1a + Vs; line(x, y1a, x2, y2); line(x, y1b, x2, y2); }); } });
+            const charX = Mx - ColW + 20, totalC = (vizChars.length - 1) * Vs; noStroke(); fill(33); vizChars.forEach((ch, i) => text(ch, charX, height / 2 - totalC / 2 + i * Vs));
         }
-
-        window.addEventListener('resize', () => {
-            resizeCanvas(windowWidth, windowHeight);
-            redraw();
-        });
-
-        // ── 8. 버튼 클릭
+        window.addEventListener('resize', () => { resizeCanvas(windowWidth, windowHeight); redraw(); });
         document.getElementById('runBtn').addEventListener('click', () => {
-            const A = document.getElementById('nameA').value.trim();
-            const B = document.getElementById('nameB').value.trim();
-            if (!A || !B) return;
+            const A = document.getElementById('nameA').value.trim(), B = document.getElementById('nameB').value.trim(); if (!A || !B) return;
             const { chars, steps } = calcSteps(A, B);
-            vizChars = chars;
-            vizSteps = steps;
-
+            vizChars = chars; vizSteps = steps;
+            document.getElementById('score').textContent = `${A} loves ${B} ${steps[steps.length - 1].join('')}%`;
             redraw();
         });
     </script>
