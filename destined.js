@@ -123,3 +123,7 @@ document.getElementById('runBtn').addEventListener('click', () => {
     resizeCanvas(windowWidth, neededH);
     redraw();
 });
+
+function homePage() {
+    window.location.href = "index.html";
+}

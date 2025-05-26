@@ -34,16 +34,27 @@
             border-radius: 12px;
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
             padding: 16px 24px;
-            display: grid;
-            grid-template-columns: 1fr auto 1fr auto;
-            align-items: center;
+            display: flex;
+            flex-wrap: wrap;
             gap: 16px;
             width: calc(100% - 40px);
-            max-width: 700px;
+            max-width: 900px;
             z-index: 10;
+            align-items: center;
+            justify-content: center;
         }
 
+        #ui button:last-child {
+            grid-column: span 4;
+            /* 전체 너비 사용 */
+            justify-self: end;
+            /* 오른쪽 정렬 */
+        }
+
+
         #ui input {
+            flex: 1 1 150px;
+            min-width: 0;
             width: 100%;
             padding: 12px 16px;
             font-size: 16px;
@@ -59,6 +70,7 @@
         }
 
         #ui button {
+            white-space: nowrap;
             padding: 12px 24px;
             font-size: 16px;
             font-weight: 600;
@@ -102,7 +114,10 @@
         <span id="score">&nbsp;</span>
         <input id="nameB" placeholder="이름 2" value="김미미" />
         <button id="runBtn">시각화</button>
+        <button type="button" onclick="homePage()">시작화면으로 돌아가기</button>
+
     </div>
+
 
     <script>
         // 획수 맵 & 분해 맵
@@ -133,7 +148,9 @@
             vizChars = chars; vizSteps = steps;
             document.getElementById('score').textContent = `${A} loves ${B} ${steps[steps.length - 1].join('')}%`;
             redraw();
-        });
+        }); function homePage() {
+            window.location.href = "index.html";
+        }
     </script>
 </body>
 
