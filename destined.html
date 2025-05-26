@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8" />
-    <title>한글 획수 궁합 – 연결만</title>
+    <title>한글 획수 궁합 – 세로 이름 + 연결선</title>
     <script src="https://cdn.jsdelivr.net/npm/p5@1.9.2/lib/p5.min.js"></script>
     <style>
         body {
@@ -69,30 +69,30 @@
         const JUNG = ['ㅏ', 'ㅐ', 'ㅑ', 'ㅒ', 'ㅓ', 'ㅔ', 'ㅕ', 'ㅖ', 'ㅗ', 'ㅘ', 'ㅙ', 'ㅚ', 'ㅛ', 'ㅜ', 'ㅠ', 'ㅝ', 'ㅞ', 'ㅟ', 'ㅠ', 'ㅡ', 'ㅢ', 'ㅣ'];
         const JONG = ['', 'ㄱ', 'ㄲ', 'ㄳ', 'ㄴ', 'ㄵ', 'ㄶ', 'ㄷ', 'ㄹ', 'ㄺ', 'ㄻ', 'ㄼ', 'ㄽ', 'ㄾ', 'ㄿ', 'ㅀ', 'ㅁ', 'ㅂ', 'ㅄ', 'ㅅ', 'ㅆ', 'ㅇ', 'ㅈ', 'ㅊ', 'ㅋ', 'ㅌ', 'ㅍ', 'ㅎ'];
 
-        // ── 2. 한글 음절 분해 → 자모 배열
+        // ── 2. 한글 음절 분해
         function decomposeHangul(str) {
             return Array.from(str).map(ch => {
                 const code = ch.charCodeAt(0) - 0xAC00;
                 if (code < 0 || code > 11171) return [ch];
-                const jong = code % 28;
-                const jung = Math.floor((code / 28) % 21);
-                const cho = Math.floor(code / (28 * 21));
+                const jong = code % 28,
+                    jung = Math.floor((code / 28) % 21),
+                    cho = Math.floor(code / (28 * 21));
                 const parts = [CHO[cho], JUNG[jung]];
                 if (JONG[jong]) parts.push(JONG[jong]);
                 return parts;
             });
         }
 
-        // ── 3. 음절별 획수 합산
+        // ── 3. 획수 합산
         function countStrokes(str) {
             return decomposeHangul(str).map(parts =>
                 parts
                     .flatMap(j => splitCon[j] || splitVow[j] || [j])
-                    .reduce((sum, jamo) => sum + (strokeMap[jamo] || 0), 0)
+                    .reduce((s, jamo) => s + (strokeMap[jamo] || 0), 0)
             );
         }
 
-        // ── 4. 두 이름 글자 교차 삽입
+        // ── 4. 이름 글자 교차 삽입
         function interleave(a, b) {
             const out = [], n = Math.max(a.length, b.length);
             for (let i = 0; i < n; i++) {
@@ -102,7 +102,7 @@
             return out;
         }
 
-        // ── 5. 슬라이딩(pairwise adjacent) 합산 (mod 10)
+        // ── 5. 슬라이딩 합산(mod10)
         function combine(scores) {
             const next = [];
             for (let i = 0; i < scores.length - 1; i++) {
@@ -111,21 +111,20 @@
             return next;
         }
 
-        // ── 6. 모든 단계 계산 후 배열로 반환
+        // ── 6. 전체 단계 계산
         function calcSteps(name1, name2) {
             const chars = interleave(name1, name2);
-            const steps = [];
-            let current = countStrokes(chars.join(''));
-            steps.push(current);
-            while (current.length > 1) {
-                current = combine(current);
-                steps.push(current);
+            const steps = []; let curr = countStrokes(chars.join(''));
+            steps.push(curr);
+            while (curr.length > 1) {
+                curr = combine(curr);
+                steps.push(curr);
             }
-            return steps;
+            return { chars, steps };
         }
 
-        // ── 7. p5.js 시각화
-        let vizSteps = [];
+        // ── 7. p5.js 시각화 세팅
+        let vizChars = [], vizSteps = [];
         function setup() {
             createCanvas(windowWidth, windowHeight);
             noLoop();
@@ -135,26 +134,37 @@
         function draw() {
             clear();
             if (!vizSteps.length) return;
-            const Mx = 100, ColW = 120, Vs = 80;
-            for (let i = 0; i < vizSteps.length; i++) {
-                const arr = vizSteps[i];
-                const x = Mx + i * ColW;
+
+            const Mx = 120, ColW = 120, Vs = 80;
+            // 1) 왼쪽에 세로로 이름 글자
+            const charX = Mx - ColW + 20;
+            const totalCharH = (vizChars.length - 1) * Vs;
+            fill(0); noStroke();
+            vizChars.forEach((ch, i) => {
+                const y = height / 2 - totalCharH / 2 + i * Vs;
+                text(ch, charX, y);
+            });
+
+            // 2) 오른쪽에 숫자 + 연결선
+            for (let c = 0; c < vizSteps.length; c++) {
+                const arr = vizSteps[c];
+                const x = Mx + c * ColW;
                 const totalH = (arr.length - 1) * Vs;
 
-                // 숫자만 그리기
-                noStroke(); fill(0);
+                // 숫자
+                fill(0); noStroke();
                 arr.forEach((v, j) => {
                     const y = height / 2 - totalH / 2 + j * Vs;
                     text(v, x, y);
                 });
 
-                // 연결선만 그리기
-                if (i < vizSteps.length - 1) {
+                // 연결선
+                if (c < vizSteps.length - 1) {
                     stroke(0);
-                    const next = vizSteps[i + 1];
-                    const nextH = (next.length - 1) * Vs;
-                    next.forEach((_, k) => {
-                        const x2 = Mx + (i + 1) * ColW;
+                    const nxt = vizSteps[c + 1];
+                    const nextH = (nxt.length - 1) * Vs;
+                    nxt.forEach((_, k) => {
+                        const x2 = Mx + (c + 1) * ColW;
                         const y2 = height / 2 - nextH / 2 + k * Vs;
                         const y1a = height / 2 - totalH / 2 + k * Vs;
                         const y1b = height / 2 - totalH / 2 + (k + 1) * Vs;
@@ -170,19 +180,14 @@
             redraw();
         });
 
-        // ── 8. 버튼 클릭 핸들러
+        // ── 8. 버튼 클릭
         document.getElementById('runBtn').addEventListener('click', () => {
             const A = document.getElementById('nameA').value.trim();
             const B = document.getElementById('nameB').value.trim();
             if (!A || !B) return;
-            vizSteps = calcSteps(A, B);
-
-            // 요약 문자열 표시
-            const txt = vizSteps
-                .map((arr, i) =>
-                    i < vizSteps.length - 1 ? arr.join(',') : arr.join('')
-                ).join(' → ');
-            document.getElementById('score').textContent = txt;
+            const { chars, steps } = calcSteps(A, B);
+            vizChars = chars;
+            vizSteps = steps;
 
             redraw();
         });
