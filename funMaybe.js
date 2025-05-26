@@ -151,7 +151,7 @@ function drawScore() {
 }
 
 function drawEatenWords() {
-    const listX = windowWidth-150;
+    const listX = windowWidth - 150;
     const listY = 30;
     fill(0, 0, 0, 180);
     noStroke();
@@ -215,7 +215,7 @@ function drawArtScreen() {
         let [m1, m2, m3] = collectedWords;
         let sentence = `You remember a ${m1} afternoon, a ${m2} in the air, and a ${m3} smiling next to you.`;
         fill(50);
-        textSize(40);
+        textSize(20);
         text(sentence, width / 2, height / 2);
     }
 
